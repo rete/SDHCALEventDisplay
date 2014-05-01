@@ -1,0 +1,25 @@
+
+MACRO( MAKE_EXAMPLE _name )
+
+	ADD_EXECUTABLE( ${_name} example/${_name}.cc )
+	INSTALL( TARGETS ${_name} RUNTIME DESTINATION bin )
+
+ENDMACRO( MAKE_EXAMPLE )
+
+
+
+MACRO( MAKE_DEV_TEST _name )
+
+	ADD_EXECUTABLE( ${_name} test/${_name}.cc )
+	INSTALL( TARGETS ${_name} RUNTIME DESTINATION bin )
+
+ENDMACRO( MAKE_DEV_TEST )
+
+
+
+MACRO( MAKE_EXECUTABLE _name )
+
+	ADD_EXECUTABLE( ${_name} main/${_name}.cc )
+	INSTALL( TARGETS ${_name} RUNTIME DESTINATION bin )
+
+ENDMACRO( MAKE_EXECUTABLE )
