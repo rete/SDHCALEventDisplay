@@ -1,0 +1,48 @@
+########################################
+# INSTALL file for SDHCALEventDisplay package
+# @author Remi Ete
+# @version v01-00-00
+# @copyright IPNL/CNRS 2014
+########################################
+
+
+//SDHCALEventDisplay package 
+Copyright (c) IPNL/CNRS 2014
+
+This file is part of SDHCALEventDisplay libraries.
+
+SDHCALEventDisplay is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+SDHCALEventDisplay is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with SDHCALEventDisplay.  If not, see <http://www.gnu.org/licenses/>.
+
+
+
+REQUIREMENTS:
+=============
+   Needs :
+     - 'ilcsoft' . Tested with the following version :
+       * v01-16
+       * v01-06-01
+       * v01-17-03
+
+INSTALL:
+=============
+
+  In the root directory type :
+
+    mkdir build (if there's not)
+    cd build
+    cmake -C $ILCSOFT/ILCSoft.cmake ..
+    make install
+     
+  Enjoy !  :)
+  
