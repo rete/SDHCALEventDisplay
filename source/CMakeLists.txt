@@ -43,6 +43,7 @@ set (
   ${CMAKE_CURRENT_SOURCE_DIR}/include/EventNavigator.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/EventManager.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/LcioCollectionFrame.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/DetectorStatisticsFrame.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/DetectorStatisticsWindow.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/DetectorFrame.h
   ${CMAKE_CURRENT_SOURCE_DIR}/include/CaloHitFrame.h
