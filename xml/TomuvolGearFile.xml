@@ -1,0 +1,20 @@
+<gear>
+    <global detectorName="SDHCALPrototype" />
+    
+    <BField type="ConstantBField" x="0.000000000e+00" y="0.000000000e+00" z="0.00000000e+00" />
+    
+    <detectors>
+        <detector name="HcalEndcap" geartype="CalorimeterParameters">
+            <layout type="Endcap" symmetry="1" phi0="0.000000000e+00" />
+            <dimensions inner_r="0.00000000e+02" outer_r="706.5184683446003" inner_z="4.0000000e+03" />
+            <layer repeat="4" thickness="350e+00" absorberThickness="348.95875e+00" cellSize0="1.040800000e+01" cellSize1="1.040800000e+01" />
+            <parameter name="FrameWidth" type="double" value="0.000000000e+00" />
+            <parameter name="Hcal_virtual_cell_size" type="double" value="1.040800000e+01" />
+            <parameter name="NCells0" type="int" value="96" />
+            <parameter name="NCells1" type="int" value="96" />
+            <parameter name="SemiDigitalThreshold1" type="double" value="1.0"/>
+            <parameter name="SemiDigitalThreshold2" type="double" value="2.0"/>
+            <parameter name="SemiDigitalThreshold3" type="double" value="3.0"/>
+        </detector>
+    </detectors>
+</gear>
