@@ -9,4 +9,6 @@
 
 #define SDHCALEventDisplay_VERSION_GE( MAJV , MINV , PLEV )  ( (SDHCALEventDisplay_MAJOR_VERSION > MAJV) || ( (SDHCALEventDisplay_MAJOR_VERSION == MAJV) && (SDHCALEventDisplay_MINOR_VERSION > MINV) ) || ( (SDHCALEventDisplay_MAJOR_VERSION == MAJV) && (SDHCALEventDisplay_MINOR_VERSION == MINV) && (SDHCALEventDisplay_PATCH_LEVEL >= PLEV) ) )
 
+#define SDHCALEventDisplay_PATH "@CMAKE_SOURCE_DIR@"
+
 #endif // SDHCALEVENTDISPLAY_HH
