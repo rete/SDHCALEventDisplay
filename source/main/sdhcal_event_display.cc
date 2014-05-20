@@ -57,28 +57,89 @@ int main(int argc, char **argv)
 {
 
 	time_t now = time(0);
+	unsigned int welcomeSize = 43;
+	std::string spacer("  ");
 
-	std::cout << "*********************************************" << std::endl;
-	std::cout << "*                                            " << std::endl;
-	std::cout << "*      WELCOME to SDHCAL Event Display       " << std::endl;
-	std::cout << "*              Copyright 2014                " << std::endl;
-	std::cout << "*            Version " << SDHCALEventDisplay_VERSION << ""<< std::endl;
-	std::cout << "*         Started at " << ctime( & now );
-	std::cout << "*" << std::endl;
-	std::cout << "*         sdhcal_event_display binary        " << std::endl;
-	std::cout << "*               Author : R. Ete              " << std::endl;
-	std::cout << "*********************************************" << std::endl;
+	std::string starBanner;
+	starBanner.append(welcomeSize, '*');
+
+	std::string emptyLine;
+	emptyLine.push_back('*');
+	emptyLine.append(welcomeSize-2, ' ');
+	emptyLine.push_back('*');
+
+	std::string versionStr;
+	std::stringstream versionStrStream;
+	versionStrStream << "Version " << SDHCALEventDisplay_VERSION;
+	std::string dateStr;
+	std::stringstream dateStrStream;
+	dateStrStream << "Started at " << ctime( & now );
+
+	std::string temp = dateStrStream.str().erase(dateStrStream.str().size() - 1);
+	dateStrStream.str("");
+	dateStrStream << temp;
+
+	int missingCharacters = welcomeSize - 2 - versionStrStream.str().size();
+
+	if(missingCharacters % 2 != 0)
+	{
+		versionStr = std::string("*")
+		           + std::string(missingCharacters/2, ' ')
+		           + versionStrStream.str()
+		           + std::string(missingCharacters/2 + 1, ' ')
+		           + "*";
+	}
+	else
+	{
+		versionStr = std::string("*")
+		           + std::string(missingCharacters/2, ' ')
+		           + versionStrStream.str()
+		           + std::string(missingCharacters/2, ' ')
+		           + "*";
+	}
+
+	missingCharacters = welcomeSize - 2 - dateStrStream.str().size();
+
+	if(missingCharacters % 2 != 0)
+	{
+		dateStr = std::string("*")
+		           + std::string(missingCharacters/2, ' ')
+		           + dateStrStream.str()
+		           + std::string(missingCharacters/2 + 1, ' ')
+		           + "*";
+	}
+	else
+	{
+		dateStr = std::string("*")
+		           + std::string(missingCharacters/2, ' ')
+		           + dateStrStream.str()
+		           + std::string(missingCharacters/2, ' ')
+		           + "*";
+	}
+
+	std::cout << spacer << starBanner << std::endl;
+	std::cout << spacer << emptyLine << std::endl;
+	std::cout << spacer << "*     WELCOME to SDHCAL Event Display     *" << std::endl;
+	std::cout << spacer << "*              Copyright 2014             *" << std::endl;
+	std::cout << spacer << versionStr << std::endl;
+	std::cout << spacer << dateStr << std::endl;
+	std::cout << spacer << emptyLine << std::endl;
+	std::cout << spacer << "*       sdhcal_event_display binary       *" << std::endl;
+	std::cout << spacer << "*             Author : R. Ete             *" << std::endl;
+	std::cout << spacer << emptyLine << std::endl;
+	std::cout << spacer << starBanner << std::endl;
 
 	std::string cmdLineFooter = "Please report bug to <rete@ipnl.in2p3.fr>";
 	TCLAP::CmdLine *pCommandLine = new TCLAP::CmdLine(cmdLineFooter, ' ', SDHCALEventDisplay_VERSION);
 
+	const std::string defaultGearFile = std::string(SDHCALEventDisplay_PATH) + "/xml/SDHCALGearFile.xml";
 	// gear file
 	TCLAP::ValueArg<std::string> gearFileNameArg(
 					"g"
 			, "gear-file"
 			, "The gear file name for geometry"
-			, true
-			, ""
+			, false
+			, defaultGearFile
 			, "string");
 	pCommandLine->add(gearFileNameArg);
 
