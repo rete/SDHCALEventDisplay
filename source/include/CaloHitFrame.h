@@ -33,7 +33,7 @@
 
 #include "OrderedCaloHitList.h"
 
-class TGMainFrame;
+class TGCompositeFrame;
 class TGGroupFrame;
 class TGButtonGroup;
 class TGCheckButton;
@@ -87,7 +87,7 @@ class CaloHitFrame
  /**
   * @brief Ctor
   */
- CaloHitFrame(TGMainFrame *pMainFrame);
+ CaloHitFrame(TGCompositeFrame *pMainFrame);
 
  /**
   * @brief Dtor 
@@ -164,7 +164,8 @@ protected:
 	TGHButtonGroup          *m_pShowHideButtonGroup;
 	TGRadioButton           *m_pShowButton;
 	TGRadioButton           *m_pHideButton;
-	TGHorizontalFrame       *m_pFromToLayerFrame;
+	TGHorizontalFrame       *m_pFromLayerFrame;
+	TGHorizontalFrame       *m_pToLayerFrame;
 	TGLabel                 *m_pFromLayerLabel;
 	TGNumberEntry           *m_pFromLayerEntry;
 	TGLabel                 *m_pToLayerLabel;
