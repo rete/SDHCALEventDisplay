@@ -29,7 +29,8 @@
 #define EVENTNAVIGATOR_H
 
 // root
-class TGMainFrame;
+class TGCompositeFrame;
+class TGFrame;
 class 	TGGroupFrame;
 class TGHorizontalFrame;
 class TGVerticalFrame;
@@ -37,9 +38,15 @@ class TGPictureButton;
 class TGLabel;
 class TGNumberEntry;
 class TGTextButton;
+class TGNumberEntryField;
+class TGComboBox;
 
 #include "Rtypes.h"
 #include "RQ_OBJECT.h"
+
+// std
+#include <set>
+#include <map>
 
 // lcio
 namespace IO
@@ -70,7 +77,7 @@ class EventNavigator
 	/**
   * @brief Ctor
   */
- EventNavigator(TGMainFrame *pMainFrame);
+ EventNavigator(TGCompositeFrame *pMainFrame);
 
  /**
   * @brief Dtor 
@@ -90,12 +97,12 @@ class EventNavigator
  /**
   *
   */
- void goToEvent(Long_t eventNumber);
+ void goToEvent();
 
  /**
   *
   */
- void goToRun(Long_t runNumber);
+ void goToRun();
 
  /**
   *
@@ -112,21 +119,37 @@ class EventNavigator
   */
  void eventUpdated();   //*SIGNAL*
 
-protected:
-
  /**
   *
   */
  EVENT::LCEvent *getCurrentEvent();
 
+protected:
+
+ /**
+  *
+  */
+ void loadRunToEventCollectionMap(IO::LCReader *pLCReader);
+
+ /**
+  *
+  */
+ void loadEvent();
+
+ typedef std::map<int, std::set<int> > RunToEventListMap;
+
  EventNavigatorGUI   *m_pEventNavigatorGUI;
  IO::LCReader        *m_pLCReader;
  EVENT::LCEvent      *m_pCurrentEvent;
  std::string          m_currentFileName;
- Long_t               m_currentRunNumber;
- Long_t               m_currentEventNumber;
+ int                  m_currentRunNumber;
+ int                  m_currentEventNumber;
+ RunToEventListMap    m_runToEventCollectionMap;
+ std::set<int>::iterator m_currentEventIterator;
+
 
  friend class EventManager;
+ friend class EventNavigatorGUI;
 
  ClassDef(EventNavigator,0);
 }; 
@@ -143,12 +166,22 @@ private:
 	/**
 	 *
 	 */
-	EventNavigatorGUI(EventNavigator *pEventNavigator, TGMainFrame *pMainFrame);
+	EventNavigatorGUI(EventNavigator *pEventNavigator, TGCompositeFrame *pMainFrame);
 
 	/**
 	 *
 	 */
 	~EventNavigatorGUI();
+
+	/**
+	 *
+	 */
+	void loadAvailableRunNumbers();
+
+	/**
+	 *
+	 */
+	void loadEventList(int runNumber);
 
 	EventNavigator          *m_pEventNavigator;
 
@@ -158,11 +191,19 @@ private:
 	TGPictureButton         *m_pPreviousEventButton;
 	TGPictureButton         *m_pNextEventButton;
 	TGTextButton            *m_pLoadFileButton;
+
 	TGVerticalFrame         *m_pEventNumberFrame;
 	TGLabel                 *m_pGoToEventLabel;
 	TGLabel                 *m_pGoToRunLabel;
 	TGNumberEntry           *m_pEventNumberEntry;
-	TGNumberEntry           *m_pRunNumberEntry;
+	TGComboBox              *m_pEventNumberComboBox;
+	TGComboBox              *m_pRunNumberComboBox;
+
+	TGGroupFrame            *m_pAutomaticDisplayGroupFrame;
+	TGHorizontalFrame       *m_pAutomaticDisplayFrame;
+	TGLabel                 *m_pEventLatencyLabel;
+	TGNumberEntry           *m_pEventLatencyNumberEntry;
+	TGTextButton            *m_pStartAutomaticDisplayButton;
 
 	// friendship
 	friend class EventNavigator;
