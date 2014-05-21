@@ -182,16 +182,18 @@ void SDHCAL::build()
 		const float cellSize0 = layerLayout.getCellSize0(layer);
 		const float cellSize1 = layerLayout.getCellSize1(layer);
 		const float layerThickness = layerLayout.getThickness(layer);
+		const float absorberThickness = layerLayout.getAbsorberThickness(layer);
+		const float zShift = (layerThickness - absorberThickness)/2.f;
 		const float xShift = nCells0*cellSize0/2.0;
 		const float yShift = nCells1*cellSize1/2.0;
 
 		Layer *pLayer = new Layer(layer, m_pGeoManager);
 		m_layerMap[layer] = pLayer;
 
-		pTopVolume->AddNodeOverlap(pLayer->m_pBottomBorder, layer, new TGeoTranslation(-xShift, 0,      layer*layerThickness));
-		pTopVolume->AddNodeOverlap(pLayer->m_pTopBorder,    layer, new TGeoTranslation( xShift, 0,      layer*layerThickness));
-		pTopVolume->AddNodeOverlap(pLayer->m_pRightBorder,  layer, new TGeoTranslation( 0,      yShift, layer*layerThickness));
-		pTopVolume->AddNodeOverlap(pLayer->m_pLeftBorder,   layer, new TGeoTranslation( 0,     -yShift, layer*layerThickness));
+		pTopVolume->AddNodeOverlap(pLayer->m_pBottomBorder, layer, new TGeoTranslation(-xShift, 0,      layer*layerThickness + absorberThickness + zShift));
+		pTopVolume->AddNodeOverlap(pLayer->m_pTopBorder,    layer, new TGeoTranslation( xShift, 0,      layer*layerThickness + absorberThickness + zShift));
+		pTopVolume->AddNodeOverlap(pLayer->m_pRightBorder,  layer, new TGeoTranslation( 0,      yShift, layer*layerThickness + absorberThickness + zShift));
+		pTopVolume->AddNodeOverlap(pLayer->m_pLeftBorder,   layer, new TGeoTranslation( 0,     -yShift, layer*layerThickness + absorberThickness + zShift));
 	}
 
 	m_alreadyBuilt = true;
