@@ -33,6 +33,7 @@
 #include "CartesianVector.h"
 
 #include "TEveBoxSet.h"
+#include "TEveBox.h"
 
 namespace sdhcal
 {
@@ -56,14 +57,14 @@ public:
 /** 
  * @brief CaloHit class
  */ 
-class CaloHit// : public TEveBox
+class CaloHit : public TEveBox
 {
  public:
 
  /**
   * @brief Ctor
   */
- CaloHit(unsigned int id, CartesianVector position, CaloHitCell cell, SemiDigitalThreshold semiDigitalThreshold);
+ CaloHit(CartesianVector position, CaloHitCell cell, SemiDigitalThreshold semiDigitalThreshold);
 
  /**
   *
@@ -103,11 +104,6 @@ class CaloHit// : public TEveBox
  /**
   *
   */
- unsigned int getID() const;
-
- /**
-  *
-  */
  void setColor(unsigned int color);
 
  /**
@@ -128,20 +124,13 @@ class CaloHit// : public TEveBox
 
 protected:
 
- /**
-  *
-  */
- void assignBoxSet(TEveBoxSet *pEveBoxSet);
-
  SemiDigitalThreshold     m_semiDigitalThreshold;
  CartesianVector          m_position;
  CaloHitCell              m_cell;
  float                   m_density2D;
  float                   m_density3D;
- unsigned int           m_id;
  unsigned int           m_color;
  unsigned int           m_transparency;
- TEveBoxSet              *m_pEveBoxSet;
 
  friend class EventManager;
  friend class CaloHitHelper;
@@ -182,19 +171,6 @@ inline float CaloHit::getDensity3D() const
 	return m_density3D;
 }
 
-//-------------------------------------------------------------------------------------------
-
-inline unsigned int CaloHit::getID() const
-{
-	return m_id;
-}
-
-//-------------------------------------------------------------------------------------------
-
-inline void CaloHit::assignBoxSet(TEveBoxSet *pEveBoxSet)
-{
-	m_pEveBoxSet = pEveBoxSet;
-}
 
 } 
 

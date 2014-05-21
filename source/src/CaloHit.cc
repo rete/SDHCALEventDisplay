@@ -34,16 +34,41 @@
 namespace sdhcal
 {
 
-CaloHit::CaloHit(unsigned int id, CartesianVector position, CaloHitCell cell, SemiDigitalThreshold semiDigitalThreshold)
- : m_id(id),
+CaloHit::CaloHit(CartesianVector position, CaloHitCell cell, SemiDigitalThreshold semiDigitalThreshold)
+ : TEveBox(),
    m_position(position),
    m_cell(cell),
    m_semiDigitalThreshold(semiDigitalThreshold),
-   m_pEveBoxSet(NULL),
-   m_color(0),
+   m_color(kRed),
    m_transparency(0)
 {
+	float xShift = m_cell.m_cellSize0 / 2.f;
+	float yShift = m_cell.m_cellSize1 / 2.f;
+	float zShift = m_cell.m_cellThickness / 2.f;
 
+	SetVertex(0, m_position.getX() - xShift, m_position.getY() - yShift, m_position.getZ() - zShift);
+	SetVertex(1, m_position.getX() - xShift, m_position.getY() + yShift, m_position.getZ() - zShift);
+	SetVertex(2, m_position.getX() + xShift, m_position.getY() + yShift, m_position.getZ() - zShift);
+	SetVertex(3, m_position.getX() + xShift, m_position.getY() - yShift, m_position.getZ() - zShift);
+	SetVertex(4, m_position.getX() - xShift, m_position.getY() - yShift, m_position.getZ() + zShift);
+	SetVertex(5, m_position.getX() - xShift, m_position.getY() + yShift, m_position.getZ() + zShift);
+	SetVertex(6, m_position.getX() + xShift, m_position.getY() + yShift, m_position.getZ() + zShift);
+	SetVertex(7, m_position.getX() + xShift, m_position.getY() - yShift, m_position.getZ() + zShift);
+
+	std::stringstream caloHitNameStream;
+	caloHitNameStream << "CaloHit_" << m_cell.m_iCell << "_" << m_cell.m_jCell << "_" << m_cell.m_layer;
+	std::stringstream caloHitTitleStream;
+
+	caloHitTitleStream << "Calo hit : \n"
+			                 << "   IJK : "
+																				<< m_cell.m_iCell << "  "
+																				<< m_cell.m_jCell << "  "
+																				<< m_cell.m_layer << "\n"
+																				<< "   Threshold " << m_semiDigitalThreshold;
+
+	this->SetName(caloHitNameStream.str().c_str());
+	this->SetElementTitle(caloHitTitleStream.str().c_str());
+	this->SetPickable(true);
 }
 
 CaloHit::CaloHit(CaloHit *pCaloHit)
@@ -62,47 +87,30 @@ CaloHit::~CaloHit()
 
 void CaloHit::setColor(unsigned int color)
 {
-	if(NULL == m_pEveBoxSet)
-		return;
-
 	m_color = color;
-	m_pEveBoxSet->SetCurrentDigit(m_id);
-	m_pEveBoxSet->DigitColor(color);
+	this->SetMainColor(color);
 }
 
 
 
 void CaloHit::setTransparency(unsigned int transparency)
 {
-	if(NULL == m_pEveBoxSet)
-		return;
-
 	m_transparency = transparency;
-	m_pEveBoxSet->SetCurrentDigit(m_id);
-	m_pEveBoxSet->DigitColor(m_color, transparency);
+	this->SetMainTransparency(transparency);
 }
 
 
 
 void CaloHit::show()
 {
-	if(NULL == m_pEveBoxSet)
-		return;
-
-	m_pEveBoxSet->SetCurrentDigit(m_id);
-	m_pEveBoxSet->DigitColor(m_color, 0);
+	this->setTransparency(0);
 }
 
 
 
 void CaloHit::hide()
 {
-	if(NULL == m_pEveBoxSet)
-		return;
-
-
-	m_pEveBoxSet->SetCurrentDigit(m_id);
-	m_pEveBoxSet->DigitColor(m_color, 100);
+	this->setTransparency(100);
 }
 
 } 
