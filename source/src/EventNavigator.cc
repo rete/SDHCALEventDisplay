@@ -35,6 +35,7 @@
 #include "TSystem.h"
 #include "TGSplitter.h"
 #include "TGFileDialog.h"
+#include "TGComboBox.h"
 
 // lcio
 #include "EVENT/LCEvent.h"
@@ -44,12 +45,16 @@
 // streamlog
 #include "streamlog/streamlog.h"
 
+// std
+#include <cstdlib>
+#include <algorithm>
+
 ClassImpQ(sdhcal::EventNavigator)
 
 namespace sdhcal
 {
 
-EventNavigator::EventNavigator(TGMainFrame *pMainFrame)
+EventNavigator::EventNavigator(TGCompositeFrame *pMainFrame)
 {
  m_pLCReader = IOIMPL::LCFactory::getInstance()->createLCReader(1);
  m_pCurrentEvent = NULL;
@@ -88,8 +93,24 @@ void EventNavigator::goToNextEvent()
 		return;
 	}
 
-	m_pEventNavigatorGUI->m_pEventNumberEntry->SetNumber(m_currentEventNumber+1);
-	m_pEventNavigatorGUI->m_pEventNumberEntry->Emit("ValueSet(Long_t)", m_currentEventNumber+1);
+	m_currentEventIterator++;
+
+	if(m_runToEventCollectionMap.find(m_currentRunNumber)->second.end() == m_currentEventIterator)
+	{
+		streamlog_out(WARNING) << "Last event reached for this run. Can't load next event !" << std::endl;
+		m_currentEventIterator--;
+		return;
+	}
+
+	std::stringstream eventNumberStream;
+	eventNumberStream << *m_currentEventIterator;
+	int entryId = m_pEventNavigatorGUI->m_pEventNumberComboBox->FindEntry(eventNumberStream.str().c_str())->EntryId();
+	m_pEventNavigatorGUI->m_pEventNumberComboBox->Select(entryId);
+
+
+
+//	m_pEventNavigatorGUI->m_pEventNumberEntry->SetNumber(m_currentEventNumber+1);
+//	m_pEventNavigatorGUI->m_pEventNumberEntry->Emit("ValueSet(Long_t)", m_currentEventNumber+1);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -108,8 +129,18 @@ void EventNavigator::goToPreviousEvent()
 		return;
 	}
 
-	m_pEventNavigatorGUI->m_pEventNumberEntry->SetNumber(m_currentEventNumber-1);
-	m_pEventNavigatorGUI->m_pEventNumberEntry->Emit("ValueSet(Long_t)", m_currentEventNumber-1);
+	if(m_runToEventCollectionMap.find(m_currentRunNumber)->second.begin() == m_currentEventIterator)
+	{
+		streamlog_out(WARNING) << "First event reached for this run. Can't load previous event !" << std::endl;
+		return;
+	}
+
+	m_currentEventIterator--;
+
+	std::stringstream eventNumberStream;
+	eventNumberStream << *m_currentEventIterator;
+	int entryId = m_pEventNavigatorGUI->m_pEventNumberComboBox->FindEntry(eventNumberStream.str().c_str())->EntryId();
+	m_pEventNavigatorGUI->m_pEventNumberComboBox->Select(entryId);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -129,6 +160,7 @@ void EventNavigator::loadLCIOFile(const std::string &fileName)
 		catch(EVENT::Exception &e)
 		{
 			streamlog_out(WARNING) << "Couldn't close lcio file '" << m_currentFileName << "'. Message : " << e.what() << std::endl;
+			m_currentFileName = "";
 			return;
 		}
 	}
@@ -138,20 +170,12 @@ void EventNavigator::loadLCIOFile(const std::string &fileName)
 	 m_pLCReader->open(fileName);
 	 m_currentFileName = fileName;
 	 streamlog_out(MESSAGE) << "LCIO file loaded successfully ! (" << m_currentFileName << ")" << std::endl;
+	 this->loadRunToEventCollectionMap(m_pLCReader);
 	}
 	catch(EVENT::Exception &e)
 	{
 		streamlog_out(WARNING) << "Couldn't open lcio file '" << fileName << "'. Message : " << e.what() << std::endl;
-
-		if(!m_currentFileName.empty())
-		{
-			streamlog_out(WARNING) << "Current lcio file is : " << m_currentFileName << std::endl;
-		}
-		else
-		{
-			streamlog_out(WARNING) << "No lcio file opened for the moment" << std::endl;
-		}
-
+		m_currentFileName = "";
 		return;
 	}
 
@@ -159,10 +183,48 @@ void EventNavigator::loadLCIOFile(const std::string &fileName)
 
 //-------------------------------------------------------------------------------------------
 
-void EventNavigator::goToEvent(Long_t eventNumber)
+void EventNavigator::goToEvent()
 {
-	eventNumber = m_pEventNavigatorGUI->m_pEventNumberEntry->GetNumber();
+	if(0 == m_pEventNavigatorGUI->m_pEventNumberComboBox->GetNumberOfEntries())
+	{
+		m_currentEventNumber = 0;
+		return;
+	}
 
+	TGTextLBEntry *textEntry = (TGTextLBEntry*) m_pEventNavigatorGUI->m_pEventNumberComboBox->GetSelectedEntry();
+
+	if(NULL == textEntry)
+	{
+		m_currentEventNumber = 0;
+		return;
+	}
+
+	const char *eventNumberStr = textEntry->GetText()->GetString();
+
+	if(NULL == eventNumberStr)
+	{
+		m_currentEventNumber = 0;
+	}
+	else
+	{
+		std::string eventNumberString(eventNumberStr);
+
+		if(!eventNumberString.empty())
+			m_currentEventNumber = atoi(eventNumberStr);
+		else
+			m_currentEventNumber = 0;
+	}
+
+	m_currentEventIterator = std::find(m_runToEventCollectionMap.find(m_currentRunNumber)->second.begin(),
+			m_runToEventCollectionMap.find(m_currentRunNumber)->second.end(), m_currentEventNumber);
+
+	loadEvent();
+}
+
+//-------------------------------------------------------------------------------------------
+
+void EventNavigator::loadEvent()
+{
 	if(m_currentFileName.empty())
 	{
 		streamlog_out(WARNING) << "No lcio file loaded for the moment. Can't load event !" << std::endl;
@@ -172,29 +234,58 @@ void EventNavigator::goToEvent(Long_t eventNumber)
 	try
 	{
 		EVENT::LCEvent *pLCEvent = NULL;
-		pLCEvent = m_pLCReader->readEvent(m_currentRunNumber, eventNumber);
+		pLCEvent = m_pLCReader->readEvent(m_currentRunNumber, m_currentEventNumber);
 
 		if(NULL == pLCEvent)
 			throw EVENT::Exception("Can't read event from current lcio file");
 
 		m_pCurrentEvent = pLCEvent;
-		m_currentEventNumber = eventNumber;
 
 		this->eventUpdated();
 		streamlog_out(MESSAGE) << "Event nb " << m_currentEventNumber << " successfully loaded !" << std::endl;
 	}
 	catch(EVENT::Exception &e)
 	{
-		streamlog_out(WARNING) << "Couldn't load event. Message : " << e.what() << std::endl;
+		streamlog_out(WARNING) << "Couldn't load event no " << m_currentEventNumber << ", run no " << m_currentRunNumber << ". Message : " << e.what() << std::endl;
 		return;
 	}
 }
 
 //-------------------------------------------------------------------------------------------
 
-void EventNavigator::goToRun(Long_t runNumber)
+void EventNavigator::goToRun()
 {
-	m_currentRunNumber = m_pEventNavigatorGUI->m_pRunNumberEntry->GetNumber();
+	if(0 == m_pEventNavigatorGUI->m_pRunNumberComboBox->GetNumberOfEntries())
+	{
+		m_currentRunNumber = 0;
+		return;
+	}
+
+	TGTextLBEntry *textEntry = (TGTextLBEntry*) m_pEventNavigatorGUI->m_pRunNumberComboBox->GetSelectedEntry();
+
+	if(NULL == textEntry)
+	{
+		m_currentRunNumber = 0;
+		return;
+	}
+
+	const char *runNumberStr = textEntry->GetText()->GetString();
+
+	if(NULL == runNumberStr)
+	{
+		m_currentRunNumber = 0;
+	}
+	else
+	{
+		std::string runNumberString(runNumberStr);
+
+		if(!runNumberString.empty())
+			m_currentRunNumber = atoi(runNumberStr);
+		else
+			m_currentRunNumber = 0;
+	}
+
+	m_pEventNavigatorGUI->loadEventList(m_currentRunNumber);
 }
 
 //-------------------------------------------------------------------------------------------
@@ -228,17 +319,55 @@ void EventNavigator::eventUpdated()
 }
 
 //-------------------------------------------------------------------------------------------
+
+void EventNavigator::loadRunToEventCollectionMap(IO::LCReader *pLCReader)
+{
+ m_runToEventCollectionMap.clear();
+
+	std::vector<int> eventNumberList;
+	pLCReader->getEvents(eventNumberList);
+
+	bool readRunOrEvent = true; // true for read run, false for read event
+	int currentRunNumber = 0;
+
+	for(std::vector<int>::iterator iter = eventNumberList.begin() , endIter = eventNumberList.end() ; endIter != iter ; ++iter)
+	{
+		if(readRunOrEvent)
+		{
+			// this creates the entry internally
+			m_runToEventCollectionMap[*iter];
+			currentRunNumber = *iter;
+			readRunOrEvent = false;
+		}
+		else
+		{
+			m_runToEventCollectionMap[currentRunNumber].insert(*iter);
+			readRunOrEvent = true;
+		}
+	}
+
+ m_pEventNavigatorGUI->loadAvailableRunNumbers();
+
+	m_currentRunNumber = m_runToEventCollectionMap.begin()->first;
+	m_currentEventIterator = m_runToEventCollectionMap.begin()->second.begin();
+	m_currentEventNumber = *m_currentEventIterator;
+
+	m_pEventNavigatorGUI->loadEventList(m_currentRunNumber);
+}
+
+//-------------------------------------------------------------------------------------------
 //-------------------------------------------------------------------------------------------
 
-EventNavigatorGUI::EventNavigatorGUI(EventNavigator *pEventNavigator, TGMainFrame *pMainFrame)
+EventNavigatorGUI::EventNavigatorGUI(EventNavigator *pEventNavigator, TGCompositeFrame *pMainFrame)
 {
 	m_pEventNavigator = pEventNavigator;
 
 	// The main frame of the navigator
 	m_pNavigatorFrame = new TGGroupFrame(pMainFrame, "Event Navigation", kHorizontalFrame);
+	pMainFrame->AddFrame(m_pNavigatorFrame, new TGLayoutHints(kLHintsNormal | kLHintsExpandX, 4));
 
  // the frame for all buttons
-	m_pButtonsFrame = new TGVerticalFrame(pMainFrame);
+	m_pButtonsFrame = new TGVerticalFrame(m_pNavigatorFrame);
 	m_pNavigatorFrame->AddFrame(m_pButtonsFrame, new TGLayoutHints(kLHintsBottom));
 
 	// the frame for next and previous buttons
@@ -266,22 +395,41 @@ EventNavigatorGUI::EventNavigatorGUI(EventNavigator *pEventNavigator, TGMainFram
 	m_pEventNumberFrame = new TGVerticalFrame(m_pNavigatorFrame);
 
 	const int padShift = 15;
+
 	// run number gui
-	m_pGoToRunLabel = new TGLabel(m_pEventNumberFrame, "Go to run");
-	m_pRunNumberEntry = new TGNumberEntry(m_pEventNumberFrame, 0, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative);
+	m_pRunNumberComboBox = new TGComboBox(m_pEventNumberFrame);
+		m_pGoToRunLabel = new TGLabel(m_pEventNumberFrame, "Go to run");
 	m_pEventNumberFrame->AddFrame(m_pGoToRunLabel, new TGLayoutHints(kLHintsCenterX ,padShift));
-	m_pEventNumberFrame->AddFrame(m_pRunNumberEntry, new TGLayoutHints(kLHintsCenterX ,padShift));
-	m_pRunNumberEntry->Connect("ValueSet(Long_t)", "sdhcal::EventNavigator", m_pEventNavigator, "goToRun(Long_t)");
+	m_pEventNumberFrame->AddFrame(m_pRunNumberComboBox);
+	m_pRunNumberComboBox->Resize(100, 20);
+	m_pRunNumberComboBox->Connect("Selected(Int_t)", "sdhcal::EventNavigator", m_pEventNavigator, "goToRun()");
 
 	// event number gui
 	m_pGoToEventLabel = new TGLabel(m_pEventNumberFrame, "Go to event");
-	m_pEventNumberEntry = new TGNumberEntry(m_pEventNumberFrame, 0, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive);
+	m_pEventNumberComboBox = new TGComboBox(m_pEventNumberFrame);
 	m_pEventNumberFrame->AddFrame(m_pGoToEventLabel, new TGLayoutHints(kLHintsCenterX ,padShift));
-	m_pEventNumberFrame->AddFrame(m_pEventNumberEntry, new TGLayoutHints(kLHintsCenterX ,padShift));
-	m_pEventNumberEntry->Connect("ValueSet(Long_t)", "sdhcal::EventNavigator", m_pEventNavigator, "goToEvent(Long_t)");
+	m_pEventNumberFrame->AddFrame(m_pEventNumberComboBox);
+	m_pEventNumberComboBox->Resize(100, 20);
+	m_pEventNumberComboBox->Connect("Selected(Int_t)", "sdhcal::EventNavigator", m_pEventNavigator, "goToEvent()");
 
-	m_pNavigatorFrame->AddFrame(m_pEventNumberFrame);
-	pMainFrame->AddFrame(m_pNavigatorFrame);
+	m_pNavigatorFrame->AddFrame(m_pEventNumberFrame, new TGLayoutHints(kLHintsNormal, 6));
+	m_pNavigatorFrame->DrawBorder();
+
+//	m_pAutomaticDisplayGroupFrame = new TGGroupFrame(pMainFrame, "Automatic display", kHorizontalFrame);
+//	pMainFrame->AddFrame(m_pAutomaticDisplayGroupFrame);
+//
+//	m_pAutomaticDisplayFrame = new TGHorizontalFrame(m_pAutomaticDisplayGroupFrame);
+//	m_pAutomaticDisplayGroupFrame->AddFrame(m_pAutomaticDisplayFrame, new TGLayoutHints(kLHintsCenterX,0 ,0, 10, 0));
+//
+//	m_pEventLatencyLabel = new TGLabel(m_pAutomaticDisplayFrame, "Event latency (ms) ");
+//	m_pAutomaticDisplayFrame->AddFrame(m_pEventLatencyLabel, new TGLayoutHints(kLHintsCenterX));
+//
+//	m_pEventLatencyNumberEntry = new TGNumberEntry(m_pAutomaticDisplayFrame, 1, 5, -1, TGNumberFormat::kNESInteger, TGNumberFormat::kNEAPositive ,TGNumberFormat::kNELLimitMinMax ,1 ,1000);
+//	m_pAutomaticDisplayFrame->AddFrame(m_pEventLatencyNumberEntry, new TGLayoutHints(kLHintsCenterX));
+//
+//	m_pStartAutomaticDisplayButton = new TGTextButton(m_pAutomaticDisplayFrame, "&Start");
+//	m_pAutomaticDisplayFrame->AddFrame(m_pStartAutomaticDisplayButton, new TGLayoutHints(kLHintsCenterX, 4));
+
 }
 
 //-------------------------------------------------------------------------------------------
@@ -296,7 +444,72 @@ EventNavigatorGUI::~EventNavigatorGUI()
 	delete m_pLoadFileButton;
 	delete m_pEventNumberFrame;
 	delete m_pGoToEventLabel;
-	delete m_pEventNumberEntry;
+	delete m_pEventNumberComboBox;
+	delete m_pGoToRunLabel;
+	delete m_pRunNumberComboBox;
+}
+
+//-------------------------------------------------------------------------------------------
+
+void EventNavigatorGUI::loadAvailableRunNumbers()
+{
+	m_pRunNumberComboBox->RemoveAll();
+
+	if(m_pEventNavigator->m_runToEventCollectionMap.empty())
+		return;
+
+	int runNumberEntryId = 0;
+	bool isFirst = true;
+
+	for(EventNavigator::RunToEventListMap::iterator iter = m_pEventNavigator->m_runToEventCollectionMap.begin() , endIter = m_pEventNavigator->m_runToEventCollectionMap.end() ; endIter != iter ; ++iter)
+	{
+		std::stringstream runNumberStream;
+		int runNumber = iter->first;
+		runNumberStream << runNumber;
+		m_pRunNumberComboBox->AddEntry(runNumberStream.str().c_str(), runNumberEntryId);
+
+		if(isFirst)
+		{
+			streamlog_out(MESSAGE) << "Select first run entry" << std::endl;
+			m_pRunNumberComboBox->Select(runNumberEntryId, false);
+			isFirst = false;
+		}
+
+		runNumberEntryId++;
+	}
+}
+
+//-------------------------------------------------------------------------------------------
+
+void EventNavigatorGUI::loadEventList(int runNumber)
+{
+	EventNavigator::RunToEventListMap::iterator findIter = m_pEventNavigator->m_runToEventCollectionMap.find(runNumber);
+
+	if(m_pEventNavigator->m_runToEventCollectionMap.end() == findIter)
+		return;
+
+	m_pEventNumberComboBox->RemoveAll();
+
+	int eventNumberEntryId = 0;
+	bool isFirst = true;
+
+	for(std::set<int>::iterator iter = findIter->second.begin() , endIter = findIter->second.end() ; endIter != iter ; ++iter)
+	{
+		std::stringstream eventNumberStream;
+		int eventNumber = *iter;
+		eventNumberStream << eventNumber;
+		m_pEventNumberComboBox->AddEntry(eventNumberStream.str().c_str(), eventNumberEntryId);
+
+		if(isFirst)
+		{
+			m_pEventNumberComboBox->Select(eventNumberEntryId, false);
+			isFirst = false;
+		}
+
+		eventNumberEntryId++;
+	}
+
+	m_pEventNavigator->goToEvent();
 }
 
 } 
