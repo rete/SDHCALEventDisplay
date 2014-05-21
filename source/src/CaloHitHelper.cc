@@ -63,7 +63,7 @@ float CaloHitHelper::CalculateCaloHitDensity2D(CaloHit *pCaloHit, const CaloHitL
 			density2D += static_cast<float>(pOtherCaloHit->getSemiDigitalThreshold());
 		}
 	}
-	density2D /= 9.f;
+	density2D /= 27.f;
 
 	return density2D;
 }
