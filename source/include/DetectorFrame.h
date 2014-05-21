@@ -32,7 +32,7 @@
 #include "RQ_OBJECT.h"
 
 
-class TGMainFrame;
+class TGCompositeFrame;
 class TGGroupFrame;
 class TGButtonGroup;
 class TGCheckButton;
@@ -60,7 +60,7 @@ class DetectorFrame
  /**
   * @brief Ctor
   */
- DetectorFrame(TGMainFrame *pMainFrame);
+ DetectorFrame(TGCompositeFrame *pMainFrame);
 
  /**
   * @brief Dtor 
@@ -98,7 +98,8 @@ protected:
 	TGHButtonGroup          *m_pShowHideButtonGroup;
 	TGRadioButton           *m_pShowButton;
 	TGRadioButton           *m_pHideButton;
-	TGHorizontalFrame       *m_pFromToLayerFrame;
+	TGHorizontalFrame       *m_pFromLayerFrame;
+	TGHorizontalFrame       *m_pToLayerFrame;
 	TGLabel                 *m_pFromLayerLabel;
 	TGNumberEntry           *m_pFromLayerEntry;
 	TGLabel                 *m_pToLayerLabel;
