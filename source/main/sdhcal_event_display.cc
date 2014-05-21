@@ -132,7 +132,7 @@ int main(int argc, char **argv)
 	std::string cmdLineFooter = "Please report bug to <rete@ipnl.in2p3.fr>";
 	TCLAP::CmdLine *pCommandLine = new TCLAP::CmdLine(cmdLineFooter, ' ', SDHCALEventDisplay_VERSION);
 
-	const std::string defaultGearFile = std::string(SDHCALEventDisplay_PATH) + "/xml/SDHCALGearFile.xml";
+	const std::string defaultGearFile = std::string(SDHCALEventDisplay_PATH) + "/config/SDHCALGearFile.xml";
 	// gear file
 	TCLAP::ValueArg<std::string> gearFileNameArg(
 					"g"
