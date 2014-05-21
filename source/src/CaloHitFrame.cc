@@ -42,6 +42,7 @@
 #include "TEveManager.h"
 #include "TGComboBox.h"
 #include "TStyle.h"
+#include "TColor.h"
 
 // streamlog
 #include "streamlog/streamlog.h"
@@ -51,26 +52,26 @@ ClassImpQ(sdhcal::CaloHitFrame);
 namespace sdhcal
 {
 
-CaloHitFrame::CaloHitFrame(TGMainFrame *pMainFrame)
+CaloHitFrame::CaloHitFrame(TGCompositeFrame *pMainFrame)
 {
 	m_pSDHCAL = Gui::getInstance()->getGeometryManager()->getSDHCAL();
 	EventManager *pEventManager = Gui::getInstance()->getEventManager();
 
 	m_pCaloHitFrame = new TGGroupFrame(pMainFrame, "Calo hits", kVerticalFrame);
-	pMainFrame->AddFrame(m_pCaloHitFrame);
+	pMainFrame->AddFrame(m_pCaloHitFrame, new TGLayoutHints(kLHintsNormal | kLHintsExpandX));
 
 	m_pCaloHitColorFrame = new TGHorizontalFrame(m_pCaloHitFrame);
-	m_pCaloHitFrame->AddFrame(m_pCaloHitColorFrame);
+	m_pCaloHitFrame->AddFrame(m_pCaloHitColorFrame, new TGLayoutHints(kLHintsNormal, 0, 0, 2));
 
 	m_pCaloHitColorLabel = new TGLabel(m_pCaloHitColorFrame, "Calo hit color");
-	m_pCaloHitColorFrame->AddFrame(m_pCaloHitColorLabel, new TGLayoutHints(kLHintsLeft | kLHintsCenterY));
+	m_pCaloHitColorFrame->AddFrame(m_pCaloHitColorLabel);
 
 	m_pCaloHitColorComboBox = new TGComboBox(m_pCaloHitColorFrame);
 	m_pCaloHitColorFrame->AddFrame(m_pCaloHitColorComboBox, new TGLayoutHints(kLHintsLeft | kLHintsCenterY, 6));
 	m_pCaloHitColorComboBox->AddEntry("Threshold", CaloHitFrame::THRESHOLD_COLOR);
 	m_pCaloHitColorComboBox->AddEntry("Density 2D", CaloHitFrame::DENSITY_2D_COLOR);
 	m_pCaloHitColorComboBox->AddEntry("Density 3D", CaloHitFrame::DENSITY_3D_COLOR);
-//	m_pCaloHitColorComboBox->AddEntry("Energy profile", CaloHitFrame::ENERGY_PROFILE_COLOR);
+//	m_pCaloHitColorComboBox->AddEntry("Energy profile", CaloHitFrame::ENERGY_PROFILE_COLOR); // not yet supported
 	m_pCaloHitColorComboBox->Select(CaloHitFrame::THRESHOLD_COLOR);
 	m_pCaloHitColorComboBox->Resize(100, 20);
 
@@ -94,30 +95,32 @@ CaloHitFrame::CaloHitFrame(TGMainFrame *pMainFrame)
 
  m_pShowPartialCaloHitsFrame->AddFrame(m_pShowHideButtonGroup, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
 
- m_pFromToLayerFrame = new TGHorizontalFrame(m_pShowPartialCaloHitsFrame);
- m_pShowPartialCaloHitsFrame->AddFrame(m_pFromToLayerFrame, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
+ m_pFromLayerFrame = new TGHorizontalFrame(m_pShowPartialCaloHitsFrame);
+ m_pShowPartialCaloHitsFrame->AddFrame(m_pFromLayerFrame, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
+ m_pToLayerFrame = new TGHorizontalFrame(m_pShowPartialCaloHitsFrame);
+  m_pShowPartialCaloHitsFrame->AddFrame(m_pToLayerFrame, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
 
-	m_pFromLayerLabel = new TGLabel(m_pFromToLayerFrame, "from layer");
-	m_pFromLayerEntry = new TGNumberEntry(m_pFromToLayerFrame, 0, 5, -1,
+	m_pFromLayerLabel = new TGLabel(m_pFromLayerFrame, "from layer");
+	m_pFromLayerEntry = new TGNumberEntry(m_pFromLayerFrame, 0, 5, -1,
 			TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMax,
 			0, m_pSDHCAL->getNumberOfLayers()-1);
 
- m_pToLayerLabel = new TGLabel(m_pFromToLayerFrame, "to layer");
-	m_pToLayerEntry = new TGNumberEntry(m_pFromToLayerFrame, m_pSDHCAL->getNumberOfLayers()-1, 5, -1,
+ m_pToLayerLabel = new TGLabel(m_pToLayerFrame, "to layer");
+	m_pToLayerEntry = new TGNumberEntry(m_pToLayerFrame, m_pSDHCAL->getNumberOfLayers()-1, 5, -1,
 			TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMax,
 			0, m_pSDHCAL->getNumberOfLayers()-1);
 
-	m_pFromToLayerFrame->AddFrame(m_pFromLayerLabel, new TGLayoutHints(kLHintsCenterY, 0, 4));
-	m_pFromToLayerFrame->AddFrame(m_pFromLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
-	m_pFromToLayerFrame->AddFrame(m_pToLayerLabel, new TGLayoutHints(kLHintsCenterY, 2, 4));
-	m_pFromToLayerFrame->AddFrame(m_pToLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pFromLayerFrame->AddFrame(m_pFromLayerLabel, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pFromLayerFrame->AddFrame(m_pFromLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pToLayerFrame->AddFrame(m_pToLayerLabel, new TGLayoutHints(kLHintsCenterY, 5, 4));
+	m_pToLayerFrame->AddFrame(m_pToLayerEntry, new TGLayoutHints(kLHintsCenterY, 7, 4));
 
 	m_pCaloHitCutFrame = new TGGroupFrame(m_pCaloHitFrame, "Cut value", kVerticalFrame);
-	m_pCaloHitFrame->AddFrame(m_pCaloHitCutFrame);
+	m_pCaloHitFrame->AddFrame(m_pCaloHitCutFrame, new TGLayoutHints(kLHintsCenterY, 0, 0, 4));
 
  m_pCaloHitCutButton = new TGCheckButton(m_pCaloHitCutFrame, "Apply cut");
  m_pCaloHitCutButton->Toggled(false);
- m_pCaloHitCutFrame->AddFrame(m_pCaloHitCutButton, new TGLayoutHints(kLHintsCenterY, 0, 4));
+ m_pCaloHitCutFrame->AddFrame(m_pCaloHitCutButton, new TGLayoutHints(kLHintsCenterY, 0, 4, 4));
 
  m_pCutOnLabel = new TGLabel(m_pCaloHitCutFrame, "Cut on");
  m_pCaloHitCutFrame->AddFrame(m_pCutOnLabel, new TGLayoutHints(kLHintsCenterY));
@@ -160,8 +163,15 @@ CaloHitFrame::CaloHitFrame(TGMainFrame *pMainFrame)
  m_pCaloHitCutComboBox->Connect("Selected(Int_t)", "sdhcal::CaloHitFrame", this, "updateCaloHits()");
  m_pCutValueEntryField->Connect("ProcessedEvent(Event_t*)", "sdhcal::CaloHitFrame", this, "updateCaloHits()");
 
- gStyle->SetPalette(1);
- gStyle->SetNumberContours(99);
+ const Int_t NRGBs = 5;
+ const Int_t NCont = 256;
+ Double_t stops[NRGBs] = { 0.00, 0.30, 0.61, 0.84, 1.00 };
+ Double_t red[NRGBs] = { 0.00, 0.00, 0.57, 0.90, 0.51 };
+ Double_t green[NRGBs] = { 0.00, 0.65, 0.95, 0.20, 0.00 };
+ Double_t blue[NRGBs] = { 0.51, 0.55, 0.15, 0.00, 0.10 };
+
+ TColor::CreateGradientColorTable(NRGBs, stops, red, green, blue,NCont);
+ gStyle->SetNumberContours(NCont);
 }
 
 CaloHitFrame::~CaloHitFrame() 
@@ -173,6 +183,9 @@ CaloHitFrame::~CaloHitFrame()
 void CaloHitFrame::getCurrentOrderedCaloHitList()
 {
 	m_currentOrderedCaloHitList = Gui::getInstance()->getEventManager()->getCurrentOrderedCaloHitList();
+
+	this->updateCaloHits();
+	this->changeCaloHitsColors(m_pCaloHitColorComboBox->GetSelected());
 }
 
 
@@ -280,36 +293,25 @@ bool CaloHitFrame::shouldHideCaloHit(CaloHit *pCaloHit)
 	// check if layer should be hidden or not
 	if(m_pShowPartialButton->IsDown())
 	{
+		if(fromLayer > toLayer)
+			return true;
+
 		if(m_pShowButton->IsDown())
 		{
-			if(fromLayer >= toLayer)
-			{
-				return true;
-			}
-
 			if(fromLayer == minLayer && toLayer == maxLayer)
-			{
 				return false;
-			}
 
-			if(currentLayer > fromLayer && currentLayer < toLayer)
+			if(currentLayer >= fromLayer && currentLayer <= toLayer)
 				return false;
 			else
 				return true;
 		}
 		else
 		{
-			if(fromLayer >= toLayer)
-			{
-				return false;
-			}
-
 			if(fromLayer == minLayer && toLayer == maxLayer)
-			{
 				return true;
-			}
 
-			if(currentLayer > fromLayer && currentLayer < toLayer)
+			if(currentLayer >= fromLayer && currentLayer <= toLayer)
 				return true;
 			else
 				return false;
@@ -388,7 +390,7 @@ bool CaloHitFrame::shouldHideCaloHit(CaloHit *pCaloHit)
 	 }
 	 case DENSITY_3D_GREATER:
 	 {
-	 	if(cutValue > pCaloHit->getDensity3D())
+	 	if(cutValue < pCaloHit->getDensity3D())
 	 		return false;
 	 	else
 	 		return true;
@@ -475,5 +477,5 @@ int CaloHitFrame::getColorBetweenMinAndMax(float min, float max, float value)
 	return (51 + ( (value - min)*( 100 - 51 ) )/( max - min ) );
 }
 
-} 
+}
 
