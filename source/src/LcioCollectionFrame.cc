@@ -31,15 +31,30 @@
 #include "TGFrame.h"
 #include "TGLabel.h"
 #include "TGTextEntry.h"
+#include "TGComboBox.h"
+
+// streamlog
+#include "streamlog/streamlog.h"
+
+// sdhcal
+#include "Gui.h"
+#include "EventNavigator.h"
+#include "EventNavigator.h"
+
+// lcio
+#include "EVENT/LCEvent.h"
+#include "EVENT/LCCollection.h"
+#include "EVENT/LCIO.h"
 
 ClassImpQ(sdhcal::LcioCollectionFrame);
 
 namespace sdhcal
 {
 
-LcioCollectionFrame::LcioCollectionFrame(TGMainFrame *pMainFrame)
+LcioCollectionFrame::LcioCollectionFrame(TGCompositeFrame *pMainFrame)
 {
 	m_pLcioCollectionFrame = new TGGroupFrame(pMainFrame, "Lcio Collections", kHorizontalFrame);
+	pMainFrame->AddFrame(m_pLcioCollectionFrame, new TGLayoutHints(kLHintsNormal | kLHintsExpandX, 4));
 
 	// sdhcal collection entry
 	m_pSDHCALCollectionFrame = new TGHorizontalFrame(m_pLcioCollectionFrame);
@@ -49,16 +64,22 @@ LcioCollectionFrame::LcioCollectionFrame(TGMainFrame *pMainFrame)
 	m_pSDHCALCollectionLabel->SetWidth(30);
 	m_pSDHCALCollectionFrame->AddFrame(m_pSDHCALCollectionLabel, new TGLayoutHints(kLHintsCenterX, 0, 0, 8));
 
-	m_pSDHCALCollectionEntry = new TGTextEntry(m_pSDHCALCollectionFrame);
-	m_pSDHCALCollectionEntry->SetText("HCALBarrel");
-	m_pSDHCALCollectionFrame->AddFrame(m_pSDHCALCollectionEntry, new TGLayoutHints(kLHintsCenterX, 10, 0, 5));
+//	m_pSDHCALCollectionEntry = new TGTextEntry(m_pSDHCALCollectionFrame);
+//	m_pSDHCALCollectionEntry->SetText("HCALBarrel");
+//	m_pSDHCALCollectionFrame->AddFrame(m_pSDHCALCollectionEntry, new TGLayoutHints(kLHintsCenterX, 10, 0, 5));
 
-	pMainFrame->AddFrame(m_pLcioCollectionFrame);
+	m_pSDHCALCollectionComboBox = new TGComboBox(m_pSDHCALCollectionFrame);
+	m_pSDHCALCollectionComboBox->Resize(100, 20);
+	m_pSDHCALCollectionFrame->AddFrame(m_pSDHCALCollectionComboBox, new TGLayoutHints(kLHintsCenterX, 10, 0, 5));
+
+	EventNavigator *pEventNavigator = Gui::getInstance()->getEventNavigator();
+	pEventNavigator->Connect("eventUpdated()", "sdhcal::LcioCollectionFrame", this, "loadCollectionList()");
+	pEventNavigator->HighPriority("eventUpdated()", "loadCollectionList()");
 }
 
 //-------------------------------------------------------------------------------------------
 
-LcioCollectionFrame::~LcioCollectionFrame() 
+LcioCollectionFrame::~LcioCollectionFrame()
 {
 
 }
@@ -66,14 +87,62 @@ LcioCollectionFrame::~LcioCollectionFrame()
 
 std::string LcioCollectionFrame::getSDHCALCollectionName() const
 {
-	const char *text = m_pSDHCALCollectionEntry->GetText();
-
-	if(!text)
+	if(0 == m_pSDHCALCollectionComboBox->GetNumberOfEntries())
+	{
+		streamlog_out(WARNING) << "No CalorimeteHit collection available" << std::endl;
 		return std::string("");
+	}
+
+	TGTextLBEntry *textEntry = (TGTextLBEntry*) m_pSDHCALCollectionComboBox->GetSelectedEntry();
+
+	if(NULL == textEntry)
+		return std::string("");
+
+	const char *collectionName = textEntry->GetText()->GetString();
+
+	if(NULL != collectionName)
+		return std::string(collectionName);
 	else
-	 return std::string(text);
+		return std::string("");
+
+//
+// OLD CODE
+//
+//	const char *text = m_pSDHCALCollectionEntry->GetText();
+//
+//	if(!text)
+//		return std::string("");
+//	else
+//	 return std::string(text);
 }
 
+
+void LcioCollectionFrame::loadCollectionList()
+{
+	m_pSDHCALCollectionComboBox->RemoveAll();
+
+	EVENT::LCEvent *pLCEvent = Gui::getInstance()->getEventNavigator()->getCurrentEvent();
+
+	if(NULL == pLCEvent)
+		return;
+
+	const std::vector<std::string> *collectionNames = pLCEvent->getCollectionNames();
+	int collectionID = 0;
+
+	for(std::vector<std::string>::const_iterator iter = collectionNames->begin(), endIter = collectionNames->end() ; endIter != iter ; ++iter)
+	{
+		EVENT::LCCollection *pCurrentCollection = pLCEvent->getCollection(*iter);
+
+		if(EVENT::LCIO::CALORIMETERHIT == pCurrentCollection->getTypeName())
+		{
+			m_pSDHCALCollectionComboBox->AddEntry((*iter).c_str(), collectionID);
+			collectionID++;
+		}
+	}
+
+	if(0 != m_pSDHCALCollectionComboBox->GetNumberOfEntries())
+		m_pSDHCALCollectionComboBox->Select(0);
+}
 
 } 
 

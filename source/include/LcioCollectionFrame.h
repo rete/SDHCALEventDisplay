@@ -32,10 +32,11 @@
 #include "RQ_OBJECT.h"
 
 class TGTextEntry;
-class TGMainFrame;
+class TGCompositeFrame;
 class TGGroupFrame;
 class TGHorizontalFrame;
 class TGLabel;
+class TGComboBox;
 
 namespace sdhcal
 {
@@ -53,7 +54,7 @@ public:
  /**
   * @brief Ctor
   */
- LcioCollectionFrame(TGMainFrame *pMainFrame);
+ LcioCollectionFrame(TGCompositeFrame *pMainFrame);
 
  /**
   * @brief Dtor 
@@ -65,12 +66,18 @@ public:
   */
  std::string getSDHCALCollectionName() const;
 
+ /**
+  *
+  */
+ void loadCollectionList();
+
 protected:
 
  TGGroupFrame        *m_pLcioCollectionFrame;
  TGHorizontalFrame   *m_pSDHCALCollectionFrame;
  TGLabel             *m_pSDHCALCollectionLabel;
  TGTextEntry         *m_pSDHCALCollectionEntry;
+ TGComboBox          *m_pSDHCALCollectionComboBox;
 
  ClassDef(LcioCollectionFrame, 0);
 }; 
