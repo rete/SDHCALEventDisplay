@@ -43,6 +43,8 @@
 #include "TGFileBrowser.h"
 #include "TGeoManager.h"
 #include "TEveGeoNode.h"
+#include "TGShutter.h"
+#include "TGScrollBar.h"
 
 // sdhcal
 #include "EventNavigator.h"
@@ -107,22 +109,27 @@ void Gui::build()
 	TEveBrowser *pEveBrowser = pEveManager->GetBrowser();
 	pEveBrowser->StartEmbedding(TRootBrowser::kLeft);
 
-	m_pMainFrame = new TGMainFrame(gClient->GetRoot(), 1200, 600);
+	m_pMainFrame = new TGMainFrame(gClient->GetRoot(), 1200, 600, kFitWidth | kFitHeight);
 	m_pMainFrame->SetWindowName("GUI");
 	m_pMainFrame->SetCleanup(kDeepCleanup);
 
-	m_pEventNavigator = new EventNavigator(m_pMainFrame);
+	TGCanvas *pCanvas = new TGCanvas(m_pMainFrame);
+	m_pMainFrame->AddFrame(pCanvas, new TGLayoutHints(kLHintsExpandX | kLHintsExpandY));
+	TGCompositeFrame *pCompositeFrame = new TGCompositeFrame(pCanvas->GetViewPort());
+	pCanvas->SetContainer(pCompositeFrame);
+
+	m_pEventNavigator = new EventNavigator(pCompositeFrame);
 	m_pEventManager = new EventManager(m_pEventNavigator);
-	m_pLcioCollectionFrame = new LcioCollectionFrame(m_pMainFrame);
-	m_pDetectorFrame = new DetectorFrame(m_pMainFrame);
-	m_pCaloHitFrame = new CaloHitFrame(m_pMainFrame);
+	m_pLcioCollectionFrame = new LcioCollectionFrame(pCompositeFrame);
+	m_pDetectorFrame = new DetectorFrame(pCompositeFrame);
+	m_pCaloHitFrame = new CaloHitFrame(pCompositeFrame);
 
 	m_pMainFrame->MapSubwindows();
-	m_pMainFrame->Resize();
+	m_pMainFrame->Resize(pCompositeFrame->GetDefaultSize());
 	m_pMainFrame->MapWindow();
 
 	pEveBrowser->StopEmbedding();
-	pEveBrowser->SetTabTitle("Navigation", 0);
+	pEveBrowser->SetTabTitle("Options", 0);
 
 	TGLViewer *pGLViewer = gEve->GetDefaultGLViewer();
 	pGLViewer->GetLightSet()->SetUseSpecular(false);
