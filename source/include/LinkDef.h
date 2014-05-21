@@ -42,6 +42,7 @@
 #pragma link C++ class sdhcal::EventManager+;
 #pragma link C++ class sdhcal::LcioCollectionFrame+;
 #pragma link C++ class sdhcal::DetectorStatisticsWindow+;
+#pragma link C++ class sdhcal::DetectorStatisticsFrame+;
 #pragma link C++ class sdhcal::DetectorFrame+;
 #pragma link C++ class sdhcal::CaloHitFrame+;
 
