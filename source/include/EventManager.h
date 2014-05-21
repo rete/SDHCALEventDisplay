@@ -36,6 +36,7 @@
 #include "OrderedCaloHitList.h"
 
 class TEveBoxSet;
+class TEveCompound;
 
 namespace EVENT
 {
@@ -113,7 +114,8 @@ protected:
  CaloHitLoader           *m_pCaloHitLoader;
  CaloHitList              m_currentCaloHitList;
  OrderedCaloHitList       m_currentOrderedCaloHitList;
- TEveBoxSet              *m_pEveCaloHitList;
+// TEveBoxSet              *m_pEveCaloHitList;
+ TEveCompound            *m_pEveCaloHitList;
 
  CaloHitColorDisplay      m_caloHitColorDisplay;
 

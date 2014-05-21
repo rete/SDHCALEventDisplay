@@ -58,6 +58,7 @@
 #include "TEveBoxSet.h"
 #include "TEveBox.h"
 #include "TEveManager.h"
+#include "TEveCompound.h"
 
 extern TEveManager *gEve;
 
@@ -73,7 +74,7 @@ EventManager::EventManager(EventNavigator *pEventNavigator)
 	m_pEventNavigator = pEventNavigator;
 	m_pEventNavigator->Connect("eventUpdated()", "sdhcal::EventManager", this, "loadCurrentEvent()");
 
-	m_pEveCaloHitList = new TEveBoxSet();
+	m_pEveCaloHitList = new TEveCompound();
 
 	m_caloHitColorDisplay = SEMI_DIGITAL_THRESHOLD;
 }
@@ -97,13 +98,13 @@ void EventManager::loadCurrentEvent()
 		std::string sdhcalCollectionName = Gui::getInstance()->getLcioCollectionFrame()->getSDHCALCollectionName();
 
 		delete m_pEveCaloHitList;
-		m_pEveCaloHitList = new TEveBoxSet();
+		m_pEveCaloHitList = new TEveCompound();
 		m_pEveCaloHitList->SetName(sdhcalCollectionName.c_str());
 		m_pEveCaloHitList->SetPickable(true);
-		m_pEveCaloHitList->Reset(TEveBoxSet::kBT_AABox, kTRUE, 64);
-		m_pEveCaloHitList->SetOwnIds(true);
+//		m_pEveCaloHitList->Reset(TEveBoxSet::kBT_AABox, kTRUE, 64);
+//		m_pEveCaloHitList->SetOwnIds(true);
 		m_pEveCaloHitList->SetMainTransparency(100);
-		m_pEveCaloHitList->SetAntiFlick(true);
+//		m_pEveCaloHitList->SetAntiFlick(true);
 
 		try
 		{
@@ -114,7 +115,9 @@ void EventManager::loadCurrentEvent()
 			{
 				try
 				{
+					m_pEveCaloHitList->OpenCompound();
 					this->loadCaloHitCollection(pCurrentCollection);
+					m_pEveCaloHitList->CloseCompound();
 					CaloHitHelper::CalculateCaloHitProperties(m_currentOrderedCaloHitList);
 					gEve->AddElement(m_pEveCaloHitList);
 					gEve->Redraw3D();
@@ -172,6 +175,7 @@ void EventManager::loadCaloHitCollection(EVENT::LCCollection *pCollection)
 
 		const gear::CalorimeterParameters &calorimeterParameters = pGearMgr->getHcalEndcapParameters();
 		const gear::LayerLayout &layerLayout = calorimeterParameters.getLayerLayout();
+		unsigned int nLayers(layerLayout.getNLayers());
 
 		float sdhcalThreshold1(static_cast<float>(calorimeterParameters.getDoubleVal("SemiDigitalThreshold1")));
 		float sdhcalThreshold2(static_cast<float>(calorimeterParameters.getDoubleVal("SemiDigitalThreshold2")));
@@ -191,6 +195,10 @@ void EventManager::loadCaloHitCollection(EVENT::LCCollection *pCollection)
 			caloHitCell.m_iCell   = cellIDDecoder(pCaloHit)[cellIDCodingI.c_str()];
 			caloHitCell.m_jCell   = cellIDDecoder(pCaloHit)[cellIDCodingJ.c_str()];
 			caloHitCell.m_layer   = cellIDDecoder(pCaloHit)[layerCoding.c_str()];
+
+			if(caloHitCell.m_layer > nLayers-1)
+				continue;
+
 			caloHitCell.m_cellSize0 = layerLayout.getCellSize0(caloHitCell.m_layer);
 			caloHitCell.m_cellSize1 = layerLayout.getCellSize1(caloHitCell.m_layer);
 			caloHitCell.m_cellThickness = fabs(layerLayout.getThickness(caloHitCell.m_layer) - layerLayout.getAbsorberThickness(caloHitCell.m_layer));
@@ -207,17 +215,11 @@ void EventManager::loadCaloHitCollection(EVENT::LCCollection *pCollection)
 			SemiDigitalThreshold threshold;
 
 			if(sdhcalThreshold1 == pCaloHit->getEnergy())
-			{
 				threshold = THRESHOLD_1;
-			}
 			else if(sdhcalThreshold2 == pCaloHit->getEnergy())
-			{
 				threshold = THRESHOLD_2;
-			}
 			else if(sdhcalThreshold3 == pCaloHit->getEnergy())
-			{
 				threshold = THRESHOLD_3;
-			}
 			else
 			{
 				std::stringstream ss;
@@ -226,18 +228,21 @@ void EventManager::loadCaloHitCollection(EVENT::LCCollection *pCollection)
 				throw EVENT::Exception(ss.str());
 			}
 
-			// Create a calo hit
-			CaloHit *pNewCaloHit = new CaloHit(elt, caloHitPosition, caloHitCell, threshold);
-			pNewCaloHit->assignBoxSet(m_pEveCaloHitList);
+			CaloHit *pNewCaloHit = new CaloHit(caloHitPosition, caloHitCell, threshold);
 
-			m_currentCaloHitList.insert(pNewCaloHit);
-			m_currentOrderedCaloHitList[pNewCaloHit->getCell().m_layer].insert(pNewCaloHit);
-			
-			m_pEveCaloHitList->AddBox(posX, posY, posZ, caloHitCell.m_cellSize0*0.8, caloHitCell.m_cellSize1*0.8, layerThickness-absorberThickness);
 			unsigned int color = this->getCaloHitColor(pNewCaloHit);
 			pNewCaloHit->setColor(color);
 			pNewCaloHit->setTransparency(0);
+
+			m_currentCaloHitList.insert(pNewCaloHit);
+			m_currentOrderedCaloHitList[pNewCaloHit->getCell().m_layer].insert(pNewCaloHit);
+			m_pEveCaloHitList->AddElement(pNewCaloHit);
 		}
+
+		streamlog_out(MESSAGE) << "Calo hit collection of size "
+				<< pCollection->getNumberOfElements()
+				<< ", loaded with " << m_currentCaloHitList.size()
+				<< " calo hits that fit into geometry" << std::endl;
 }
 
 //-------------------------------------------------------------------------------------------
