@@ -48,16 +48,16 @@ ClassImpQ(sdhcal::DetectorFrame);
 namespace sdhcal
 {
 
-DetectorFrame::DetectorFrame(TGMainFrame *pMainFrame)
+DetectorFrame::DetectorFrame(TGCompositeFrame *pMainFrame)
 {
 	m_pSDHCAL = Gui::getInstance()->getGeometryManager()->getSDHCAL();
 
  m_pDetectorFrame = new TGGroupFrame(pMainFrame, "Detector", kVerticalFrame);
- pMainFrame->AddFrame(m_pDetectorFrame);
+ pMainFrame->AddFrame(m_pDetectorFrame, new TGLayoutHints(kLHintsNormal | kLHintsExpandX, 4));
 
  m_pShowDetectorButton = new TGCheckButton(m_pDetectorFrame, new TGHotString("Show detector"));
  m_pShowDetectorButton->SetState(kButtonDown, false);
- m_pDetectorFrame->AddFrame(m_pShowDetectorButton);
+ m_pDetectorFrame->AddFrame(m_pShowDetectorButton, new TGLayoutHints(kLHintsNormal, 0, 0, 2));
 
  m_pShowPartialButton = new TGCheckButton(m_pDetectorFrame, new TGHotString("Show partially :"));
  m_pDetectorFrame->AddFrame(m_pShowPartialButton);
@@ -68,30 +68,35 @@ DetectorFrame::DetectorFrame(TGMainFrame *pMainFrame)
  m_pShowHideButtonGroup = new TGHButtonGroup(m_pShowPartialDetectorFrame);
  m_pShowButton = new TGRadioButton(m_pShowHideButtonGroup, new TGHotString("Show"), 1);
  m_pHideButton = new TGRadioButton(m_pShowHideButtonGroup, new TGHotString("Hide"), 2);
- m_pShowHideButtonGroup->SetLayoutHints(new TGLayoutHints(kLHintsExpandX));
+// m_pShowHideButtonGroup->SetLayoutHints(new TGLayoutHints(kLHintsLeft));
  m_pShowHideButtonGroup->Show();
  m_pShowButton->SetOn();
  m_pShowHideButtonGroup->SetRadioButtonExclusive(true);
 
- m_pShowPartialDetectorFrame->AddFrame(m_pShowHideButtonGroup, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
+ m_pShowPartialDetectorFrame->AddFrame(m_pShowHideButtonGroup);//, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
 
- m_pFromToLayerFrame = new TGHorizontalFrame(m_pShowPartialDetectorFrame);
- m_pShowPartialDetectorFrame->AddFrame(m_pFromToLayerFrame, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
+ m_pFromLayerFrame = new TGHorizontalFrame(m_pShowPartialDetectorFrame);
+ m_pShowPartialDetectorFrame->AddFrame(m_pFromLayerFrame, new TGLayoutHints(kLHintsNormal, 0, 0, 0, 4));//, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
+ m_pToLayerFrame = new TGHorizontalFrame(m_pShowPartialDetectorFrame);
+ m_pShowPartialDetectorFrame->AddFrame(m_pToLayerFrame);//, new TGLayoutHints(kLHintsCenterX | kLHintsTop));
 
-	m_pFromLayerLabel = new TGLabel(m_pFromToLayerFrame, "from layer");
-	m_pFromLayerEntry = new TGNumberEntry(m_pFromToLayerFrame, 0, 5, -1,
+	m_pFromLayerLabel = new TGLabel(m_pFromLayerFrame, "from layer");
+	m_pFromLayerEntry = new TGNumberEntry(m_pFromLayerFrame, 0, 5, -1,
 			TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMax,
 			0, m_pSDHCAL->getNumberOfLayers()-1);
 
- m_pToLayerLabel = new TGLabel(m_pFromToLayerFrame, "to layer");
-	m_pToLayerEntry = new TGNumberEntry(m_pFromToLayerFrame, m_pSDHCAL->getNumberOfLayers()-1, 5, -1,
+ m_pToLayerLabel = new TGLabel(m_pToLayerFrame, "to layer");
+	m_pToLayerEntry = new TGNumberEntry(m_pToLayerFrame, m_pSDHCAL->getNumberOfLayers()-1, 5, -1,
 			TGNumberFormat::kNESInteger, TGNumberFormat::kNEANonNegative, TGNumberFormat::kNELLimitMax,
 			0, m_pSDHCAL->getNumberOfLayers()-1);
 
-	m_pFromToLayerFrame->AddFrame(m_pFromLayerLabel, new TGLayoutHints(kLHintsCenterY, 0, 4));
-	m_pFromToLayerFrame->AddFrame(m_pFromLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
-	m_pFromToLayerFrame->AddFrame(m_pToLayerLabel, new TGLayoutHints(kLHintsCenterY, 2, 4));
-	m_pFromToLayerFrame->AddFrame(m_pToLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pFromLayerFrame->AddFrame(m_pFromLayerLabel, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pFromLayerFrame->AddFrame(m_pFromLayerEntry, new TGLayoutHints(kLHintsCenterY, 0, 4));
+	m_pToLayerFrame->AddFrame(m_pToLayerLabel, new TGLayoutHints(kLHintsCenterY | kLHintsCenterX, 5, 4));
+	m_pToLayerFrame->AddFrame(m_pToLayerEntry, new TGLayoutHints(kLHintsCenterY | kLHintsCenterX, 7, 4));
+
+	m_pDetectorFrame->MapSubwindows();
+	m_pDetectorFrame->MapWindow();
 
 	// signal - slot connections
 	m_pShowDetectorButton->Connect("Toggled(Bool_t)", "sdhcal::DetectorFrame", this, "showDetector(Bool_t)");
