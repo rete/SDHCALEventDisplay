@@ -82,6 +82,11 @@ public:
  /**
   *
   */
+ void loadSimCaloHitCollection(EVENT::LCCollection *pCollection);
+
+ /**
+  *
+  */
  unsigned int getCaloHitColor(CaloHit *pCaloHit);
 
  /**

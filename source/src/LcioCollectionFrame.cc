@@ -133,7 +133,8 @@ void LcioCollectionFrame::loadCollectionList()
 	{
 		EVENT::LCCollection *pCurrentCollection = pLCEvent->getCollection(*iter);
 
-		if(EVENT::LCIO::CALORIMETERHIT == pCurrentCollection->getTypeName())
+		if(EVENT::LCIO::CALORIMETERHIT == pCurrentCollection->getTypeName()
+				|| EVENT::LCIO::SIMCALORIMETERHIT == pCurrentCollection->getTypeName())
 		{
 			m_pSDHCALCollectionComboBox->AddEntry((*iter).c_str(), collectionID);
 			collectionID++;

@@ -15,6 +15,9 @@
             <parameter name="SemiDigitalThreshold1" type="double" value="1.0"/>
             <parameter name="SemiDigitalThreshold2" type="double" value="2.0"/>
             <parameter name="SemiDigitalThreshold3" type="double" value="3.0"/>
+            <parameter name="SimThreshold1" type="int" value="0"/>
+            <parameter name="SimThreshold2" type="int" value="5"/>
+            <parameter name="SimThreshold3" type="int" value="10"/>
         </detector>
     </detectors>
     

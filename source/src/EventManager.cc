@@ -41,6 +41,7 @@
 #include "EVENT/LCIO.h"
 #include "EVENT/LCCollection.h"
 #include "EVENT/CalorimeterHit.h"
+#include "EVENT/SimCalorimeterHit.h"
 #include "UTIL/CellIDDecoder.h"
 
 
@@ -101,10 +102,7 @@ void EventManager::loadCurrentEvent()
 		m_pEveCaloHitList = new TEveCompound();
 		m_pEveCaloHitList->SetName(sdhcalCollectionName.c_str());
 		m_pEveCaloHitList->SetPickable(true);
-//		m_pEveCaloHitList->Reset(TEveBoxSet::kBT_AABox, kTRUE, 64);
-//		m_pEveCaloHitList->SetOwnIds(true);
 		m_pEveCaloHitList->SetMainTransparency(100);
-//		m_pEveCaloHitList->SetAntiFlick(true);
 
 		try
 		{
@@ -117,6 +115,24 @@ void EventManager::loadCurrentEvent()
 				{
 					m_pEveCaloHitList->OpenCompound();
 					this->loadCaloHitCollection(pCurrentCollection);
+					m_pEveCaloHitList->CloseCompound();
+					CaloHitHelper::CalculateCaloHitProperties(m_currentOrderedCaloHitList);
+					gEve->AddElement(m_pEveCaloHitList);
+					gEve->Redraw3D();
+					this->caloHitsAvailable();
+				}
+				catch(EVENT::Exception &e)
+				{
+					streamlog_out(WARNING) << "Exception thrown while loading collection : " << sdhcalCollectionName << ". Message : " << e.what() << std::endl;
+				}
+			}
+			// loadSimCaloHitCollection
+			else if(collectionTypeName == EVENT::LCIO::SIMCALORIMETERHIT)
+			{
+				try
+				{
+					m_pEveCaloHitList->OpenCompound();
+					this->loadSimCaloHitCollection(pCurrentCollection);
 					m_pEveCaloHitList->CloseCompound();
 					CaloHitHelper::CalculateCaloHitProperties(m_currentOrderedCaloHitList);
 					gEve->AddElement(m_pEveCaloHitList);
@@ -243,6 +259,101 @@ void EventManager::loadCaloHitCollection(EVENT::LCCollection *pCollection)
 				<< pCollection->getNumberOfElements()
 				<< ", loaded with " << m_currentCaloHitList.size()
 				<< " calo hits that fit into geometry" << std::endl;
+}
+
+
+void EventManager::loadSimCaloHitCollection(EVENT::LCCollection *pCollection)
+{
+	if(LCIO::SIMCALORIMETERHIT != pCollection->getTypeName())
+			throw EVENT::Exception("Bad collection type while loading sim calorimeter hits");
+
+		UTIL::CellIDDecoder<EVENT::SimCalorimeterHit> cellIDDecoder(pCollection);
+		const std::string layerCodingString(pCollection->getParameters().getStringVal(LCIO::CellIDEncoding));
+
+		std::string layerCoding;
+
+		if(layerCodingString.empty())
+		{
+			layerCoding = "K-1";
+		}
+		else
+		{
+			layerCoding = (layerCodingString.find("K-1") == std::string::npos) ? "K" : "K-1";
+		}
+
+		std::string cellIDCodingI("I");
+		std::string cellIDCodingJ("J");
+
+		gear::GearMgr *pGearMgr = Config::getInstance()->getGearMgr();
+
+		if(NULL == pGearMgr)
+			throw EVENT::Exception("Gear file not parsed yet. Please parse the gear file before loading any collection !");
+
+		const gear::CalorimeterParameters &calorimeterParameters = pGearMgr->getHcalEndcapParameters();
+		const gear::LayerLayout &layerLayout = calorimeterParameters.getLayerLayout();
+		unsigned int nLayers(layerLayout.getNLayers());
+
+		int simThreshold1(calorimeterParameters.getIntVal("SimThreshold1"));
+		int simThreshold2(calorimeterParameters.getIntVal("SimThreshold2"));
+		int simThreshold3(calorimeterParameters.getIntVal("SimThreshold3"));
+
+		streamlog_out(MESSAGE) << "Loading sim calo hits size : " << pCollection->getNumberOfElements() << std::endl;
+
+		for(unsigned int elt=0 ; elt<pCollection->getNumberOfElements() ; elt++)
+		{
+			EVENT::SimCalorimeterHit *pCaloHit = NULL;
+			pCaloHit = dynamic_cast<EVENT::SimCalorimeterHit*>(pCollection->getElementAt(elt));
+
+			if(NULL == pCaloHit)
+				throw EVENT::Exception("Bad element type while loading sim calorimeter hits");
+
+			CaloHitCell caloHitCell;
+			caloHitCell.m_iCell   = cellIDDecoder(pCaloHit)[cellIDCodingI.c_str()];
+			caloHitCell.m_jCell   = cellIDDecoder(pCaloHit)[cellIDCodingJ.c_str()];
+			caloHitCell.m_layer   = cellIDDecoder(pCaloHit)[layerCoding.c_str()];
+
+			if(caloHitCell.m_layer > nLayers-1)
+				continue;
+
+			caloHitCell.m_cellSize0 = layerLayout.getCellSize0(caloHitCell.m_layer);
+			caloHitCell.m_cellSize1 = layerLayout.getCellSize1(caloHitCell.m_layer);
+			caloHitCell.m_cellThickness = fabs(layerLayout.getThickness(caloHitCell.m_layer) - layerLayout.getAbsorberThickness(caloHitCell.m_layer));
+
+			float layerThickness = layerLayout.getThickness(caloHitCell.m_layer);
+			float absorberThickness = layerLayout.getAbsorberThickness(caloHitCell.m_layer);
+
+			float posX = caloHitCell.m_iCell*caloHitCell.m_cellSize0 - 96*caloHitCell.m_cellSize0/2.0 - caloHitCell.m_cellSize0/2.0;
+			float posY = caloHitCell.m_jCell*caloHitCell.m_cellSize1 - 96*caloHitCell.m_cellSize1/2.0 - caloHitCell.m_cellSize1/2.0;
+			float posZ = caloHitCell.m_layer*layerThickness + absorberThickness + (layerThickness-absorberThickness)/2.0;
+
+			CartesianVector caloHitPosition(posX, posY,	posZ);
+
+			SemiDigitalThreshold threshold;
+
+			if(pCaloHit->getNMCContributions() > simThreshold3)
+				threshold = THRESHOLD_3;
+			else if(pCaloHit->getNMCContributions() > simThreshold2)
+				threshold = THRESHOLD_2;
+			else if(pCaloHit->getNMCContributions() > simThreshold1)
+				threshold = THRESHOLD_1;
+			else
+				continue;
+
+			CaloHit *pNewCaloHit = new CaloHit(caloHitPosition, caloHitCell, threshold);
+
+			unsigned int color = this->getCaloHitColor(pNewCaloHit);
+			pNewCaloHit->setColor(color);
+			pNewCaloHit->setTransparency(0);
+
+			m_currentCaloHitList.insert(pNewCaloHit);
+			m_currentOrderedCaloHitList[pNewCaloHit->getCell().m_layer].insert(pNewCaloHit);
+			m_pEveCaloHitList->AddElement(pNewCaloHit);
+		}
+
+		streamlog_out(MESSAGE) << "Sim calo hit collection of size "
+				<< pCollection->getNumberOfElements()
+				<< ", loaded with " << m_currentCaloHitList.size()
+				<< " passing threshold1 of " << simThreshold1 << " MC contributions" << std::endl;
 }
 
 //-------------------------------------------------------------------------------------------
