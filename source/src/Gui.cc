@@ -33,6 +33,7 @@
 #include "TEveBrowser.h"
 #include "TGNumberEntry.h"
 #include "TGButton.h"
+#include "TGWindow.h"
 #include "TGLabel.h"
 #include "TGLViewer.h"
 #include "TEveViewer.h"
@@ -133,6 +134,9 @@ void Gui::build()
 
 	TGLViewer *pGLViewer = gEve->GetDefaultGLViewer();
 	pGLViewer->GetLightSet()->SetUseSpecular(false);
+
+	TGWindow *pMainWindow = gEve->GetMainWindow();
+	pMainWindow->SetWindowName("SDHCAL Event Display");
 
 	m_alreadyBuilt = true;
 }
