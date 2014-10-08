@@ -169,6 +169,16 @@ int main(int argc, char **argv)
 			, &verboseConstraint);
 	pCommandLine->add(verboseLevelArg);
 
+	// timer mode (optional)
+	TCLAP::ValueArg<unsigned int> timerModeArg(
+					"t"
+			, "timer"
+			, "The number of seconds for next event"
+			, false
+			, 0
+			, "unsigned int");
+	pCommandLine->add(timerModeArg);
+
 	pCommandLine->parse(argc, argv);
 
 	// logstream settings
@@ -197,6 +207,11 @@ int main(int argc, char **argv)
 	if(lcioFileNameArg.isSet())
 	{
 		pGui->getEventNavigator()->loadLCIOFile(lcioFileNameArg.getValue());
+	}
+
+	if(timerModeArg.isSet())
+	{
+		pGui->getEventNavigator()->startTimer(timerModeArg.getValue());
 	}
 
 	pApplication->Run();

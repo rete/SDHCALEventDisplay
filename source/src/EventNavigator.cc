@@ -36,6 +36,10 @@
 #include "TGSplitter.h"
 #include "TGFileDialog.h"
 #include "TGComboBox.h"
+#include "TTimer.h"
+#include "TEveManager.h"
+#include "TGLViewer.h"
+#include "TGLAutoRotator.h"
 
 // lcio
 #include "EVENT/LCEvent.h"
@@ -63,6 +67,8 @@ EventNavigator::EventNavigator(TGCompositeFrame *pMainFrame)
  m_currentEventNumber = 0;
 
 	m_pEventNavigatorGUI = new EventNavigatorGUI(this, pMainFrame);
+
+	m_timer.Connect("Timeout()", "sdhcal::EventNavigator", this, "goToNextEvent()");
 }
 
 //-------------------------------------------------------------------------------------------
@@ -353,6 +359,27 @@ void EventNavigator::loadRunToEventCollectionMap(IO::LCReader *pLCReader)
 	m_currentEventNumber = *m_currentEventIterator;
 
 	m_pEventNavigatorGUI->loadEventList(m_currentRunNumber);
+}
+
+//-------------------------------------------------------------------------------------------
+
+void EventNavigator::startTimer(unsigned int seconds)
+{
+	m_timer.Stop();
+	m_timer.Start(seconds*1000, kFALSE);
+
+	TGLViewer *pGLViewer = gEve->GetDefaultGLViewer();
+	pGLViewer->GetAutoRotator()->Start();
+}
+
+//-------------------------------------------------------------------------------------------
+
+void EventNavigator::stopTimer()
+{
+	m_timer.Stop();
+
+	TGLViewer *pGLViewer = gEve->GetDefaultGLViewer();
+	pGLViewer->GetAutoRotator()->Stop();
 }
 
 //-------------------------------------------------------------------------------------------

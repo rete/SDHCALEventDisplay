@@ -43,6 +43,7 @@ class TGComboBox;
 
 #include "Rtypes.h"
 #include "RQ_OBJECT.h"
+#include "TTimer.h"
 
 // std
 #include <set>
@@ -124,6 +125,16 @@ class EventNavigator
   */
  EVENT::LCEvent *getCurrentEvent();
 
+ /**
+  *
+  */
+ void startTimer(unsigned int seconds);
+
+ /**
+  *
+  */
+ void stopTimer();
+
 protected:
 
  /**
@@ -146,6 +157,7 @@ protected:
  int                  m_currentEventNumber;
  RunToEventListMap    m_runToEventCollectionMap;
  std::set<int>::iterator m_currentEventIterator;
+ TTimer               m_timer;
 
 
  friend class EventManager;
